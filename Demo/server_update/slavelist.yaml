@@ -1,0 +1,7 @@
+---
+groups:
+ - name:	Local
+   slaves:
+    - ip:	http://localhost
+    - ip:	http://127.0.0.1
+...

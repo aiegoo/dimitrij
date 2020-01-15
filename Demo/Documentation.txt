@@ -1,0 +1,63 @@
+Master:
+
+On the Master server, there is just one command: server-update.
+
+server-update command takes one argument: a repository name.
+
+When you run server-update, it will look at a list of slave servers in /etc/server-update/slavelist.txt
+
+For every entry in that list, the server will send a GET request to the target address with a GET parameter which will be the repository name. For example:
+
+server-update hanuman
+
+That command will tell every slave server on the list to run an update on the hanuman repository.
+
+
+Slave:
+
+Slave servers are configured to run a Flask application which sits idly until it receives a GET request.
+
+After the slave receives the GET request, it will take the repository name as a parameter, remove the local repository under that name, if it exits, and do a fresh git clone on the target repository.
+
+To do that, a shell script named slave-activate exists on the slave server. It is under /bin/slave-activate
+
+When a GET request is received by the slave, it will pass the repo name as the parameter to slave-activate.
+
+For now, the only repository availabe is https://github.com/aiegoo/.
+
+An example of how this works:
+
+1. Slave receives a GET request with the parameter repo=hanuman
+2. Slave opens a new thread and runs /bin/slave-activate hanuman
+3. slave-activate removes any repository under that name, for example ~/repos/hanuman
+4. slave-activate clones into https://github.com/aiegoo/hanuman.git
+5. slave-activate stores the clone in ~/repos/hanuman
+
+To run the slave Flask server, it is necessary to first activate the virtual environment it lives in. Currently, the command for that is:
+
+source Slave/bin/activate
+
+After you have activated the Slave environment, you can change directory to Slave:
+
+cd Slave
+
+And run:
+
+python3 slave.py
+
+OPTIONALLY it is possible, for testing purposes, to serve a file via the slave. You can do that by adding a parameter to the command line. For example:
+
+python3 slave.py /root/repos/hanuman/index.html
+
+This command will both listen for incoming GET requests from the Master server for updates AND it will serve a web page of your choice. Be warned that the slave is on an experimental Flask server and should not be used for production.
+
+
+Nutshell:
+
+Master server broadcasts a signal to all of the slaves that they should update from a github repository using the command server-update.
+
+Slaves receive the signal, remove the existing repository under that name and cloning into it again, thus updating it.
+
+
+
+
